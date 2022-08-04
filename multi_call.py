@@ -4,7 +4,19 @@ import json
 from datetime import datetime
 
 
-def multi_call(call_data_array, max_in_req):
+def multi_call(call_data_params, max_in_req):
+    call_data_array = []
+    rpc_id = 1
+    for call_data_param in call_data_params:
+        call_data = {
+            "jsonrpc": "2.0",
+            "method": call_data_param["method"],
+            "params": call_data_param["params"],
+            "id": rpc_id
+        }
+        call_data_array.append(call_data)
+        rpc_id += 1
+
     result_array = []
     if len(call_data_array) == 0:
         return result_array
@@ -36,27 +48,24 @@ def multi_call(call_data_array, max_in_req):
 def test():
     call_data_array = []
 
-    rpc_id = 1
-
     start_block = 1000
-    end_block = 1100
+    end_block = 1020
     for block_num in range(start_block, end_block):
         call_data = {
-            "jsonrpc": "2.0",
             "method": "eth_getBlockByNumber",
             "params": [hex(block_num), True],
-            "id": rpc_id
         }
         call_data_array.append(call_data)
-        rpc_id += 1
 
     bn = start_block
-    for resp in multi_call(call_data_array, 10):
+    for resp in multi_call(call_data_array, 20):
         if bn == (int(resp["number"], 0)):
             print(f"OK {bn}")
         else:
             raise Exception(f"Test failed {bn}")
         bn += 1
+    if bn != end_block:
+        raise Exception(f"Not all responses found")
 
 
 test()
