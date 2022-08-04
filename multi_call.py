@@ -5,7 +5,6 @@ from datetime import datetime
 
 
 def multi_call(call_data_array, max_in_req):
-
     result_array = []
     if len(call_data_array) == 0:
         return result_array
@@ -51,7 +50,6 @@ def test():
         call_data_array.append(call_data)
         rpc_id += 1
 
-
     bn = start_block
     for resp in multi_call(call_data_array, 10):
         if bn == (int(resp["number"], 0)):
@@ -59,7 +57,6 @@ def test():
         else:
             raise Exception(f"Test failed {bn}")
         bn += 1
-
 
 
 test()
