@@ -112,13 +112,26 @@ def test():
     token_address = "0x2036807B0B3aaf5b1858EE822D0e111fDdac7018";
     wallet = "0x22DB5ceC3Ecd475Ab39Ee5729403D2F23c03Fb3d"
     call_data_params = []
-    call_params = web3_preparer.get_balance(token_address, wallet)
-    call_data_params.append(call_params)
 
-    call_params = web3_preparer.get_balance(token_address, wallet)
-    call_data_params.append(call_params)
+    mumbai_holders = []
+    with open("mumbai_holders.txt") as r:
+        for line in r:
+            if line.strip():
+                mumbai_holders.append(line.strip())
 
-    print(multi_call(call_data_params, 1))
+    start = time.time()
+    print(f"Prepare holders params for {len(mumbai_holders)} holder addresses")
+    for mumbai_holder in mumbai_holders:
+        call_params = web3_preparer.get_balance(token_address, wallet)
+        call_data_params.append(call_params)
+    end = time.time()
+    print(f"Preparation took {end - start:0.3f}s")
+
+    print(f"Start multi call for {len(mumbai_holders)} holder addresses")
+    start = time.time()
+    print(multi_call(call_data_params, 17))
+    end = time.time()
+    print(f"Response took {end - start:0.3f}s")
 
 
 if __name__ == "__main__":
