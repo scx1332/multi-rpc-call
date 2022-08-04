@@ -1,7 +1,6 @@
-import os
 import requests
 import json
-from datetime import datetime
+import time
 
 
 def multi_call(call_data_params, max_in_req):
@@ -27,7 +26,7 @@ def multi_call(call_data_params, max_in_req):
         start_idx = batch_no * max_in_req
         end_idx = min(len(call_data_array), batch_no * max_in_req + max_in_req)
 
-        print(f"Requesting responses {start_idx} to {end_idx}")
+        # print(f"Requesting responses {start_idx} to {end_idx}")
         r = requests.post('http://54.38.192.207:8545', json=call_data_array[start_idx:end_idx])
         rpc_resp_array = json.loads(r.text)
 
@@ -45,11 +44,9 @@ def multi_call(call_data_params, max_in_req):
     return result_array
 
 
-def test():
+def test_get_block_numer(start_block, end_block, batch_size):
     call_data_array = []
 
-    start_block = 1000
-    end_block = 1020
     for block_num in range(start_block, end_block):
         call_data = {
             "method": "eth_getBlockByNumber",
@@ -58,9 +55,10 @@ def test():
         call_data_array.append(call_data)
 
     bn = start_block
-    for resp in multi_call(call_data_array, 20):
+    for resp in multi_call(call_data_array, batch_size):
         if bn == (int(resp["number"], 0)):
-            print(f"OK {bn}")
+            # print(f"OK {bn}")
+            pass
         else:
             raise Exception(f"Test failed {bn}")
         bn += 1
@@ -68,4 +66,23 @@ def test():
         raise Exception(f"Not all responses found")
 
 
-test()
+if __name__ == "__main__":
+    start = time.time()
+    test_get_block_numer(1000, 2000, 20)
+    end = time.time()
+    print(f"test_get_block_numer(1000, 2000, 20) {end - start:0.3f}s")
+
+    start = time.time()
+    test_get_block_numer(1000, 2000, 10)
+    end = time.time()
+    print(f"test_get_block_numer(1000, 2000, 10) {end - start:0.3f}s")
+
+    start = time.time()
+    test_get_block_numer(1000, 2000, 5)
+    end = time.time()
+    print(f"test_get_block_numer(1000, 2000, 5) {end - start:0.3f}s")
+
+    start = time.time()
+    test_get_block_numer(1000, 2000, 1)
+    end = time.time()
+    print(f"test_get_block_numer(1000, 2000, 1) {end - start:0.3f}s")
