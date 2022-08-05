@@ -66,7 +66,54 @@ def test_get_block_numer(start_block, end_block, batch_size):
         raise Exception(f"Not all responses found")
 
 
-if __name__ == "__main__":
+def erc20_get_balance_call(token_address, wallet, block):
+    strip_wallet = wallet.replace("0x", "")
+    return {
+        'method': 'eth_call',
+        'params': [
+            {
+                'to': token_address,
+                'data': '0x70a08231000000000000000000000000' + strip_wallet
+            },
+            block]
+    }
+
+def test_get_balance():
+    token_address = "0x2036807B0B3aaf5b1858EE822D0e111fDdac7018";
+    call_data_params = []
+
+    mumbai_holders = []
+    with open("mumbai_holders.txt") as r:
+        for line in r:
+            if line.strip():
+                mumbai_holders.append(line.strip())
+
+    start = time.time()
+    print(f"Prepare holders params for {len(mumbai_holders)} holder addresses")
+    for mumbai_holder_wallet in mumbai_holders:
+        call_params = erc20_get_balance_call(token_address, mumbai_holder_wallet, 'latest')
+        call_data_params.append(call_params)
+
+    end = time.time()
+    print(f"Preparation took {end - start:0.3f}s")
+
+    print(f"Start multi call for {len(mumbai_holders)} holder addresses")
+    start = time.time()
+    batch_size = 9
+    resp = multi_call(call_data_params, batch_size)
+
+
+
+    end = time.time()
+
+    for mumbai_holder_wallet, res in zip(mumbai_holders, resp):
+        for res in resp:
+            glms = int(res, 0) / 1000000000 / 1000000000
+            print(f"Holder {mumbai_holder_wallet}: {glms}")
+
+    print(f"Response took {end - start:0.3f}s")
+
+def test_get_block():
     start = time.time()
     test_get_block_numer(1000, 2000, 20)
     end = time.time()
@@ -86,3 +133,10 @@ if __name__ == "__main__":
     test_get_block_numer(1000, 2000, 1)
     end = time.time()
     print(f"test_get_block_numer(1000, 2000, 1) {end - start:0.3f}s")
+
+
+if __name__ == "__main__":
+    test_get_balance()
+
+
+

@@ -18,7 +18,7 @@ class ExtractMethodAndParamsProvider(Web3.HTTPProvider):
     def make_request(self, method, params):
         # validator wants to validate chain id so we have to return something
         if method == 'eth_chainId':
-            dummy_response = {'jsonrpc': '2.0', 'id': 0, 'result': '0x1'}
+            dummy_response = {'jsonrpc': '2.0', 'id': 0, 'result': '1'}
             return dummy_response
 
         self.call_counter += 1
@@ -53,7 +53,7 @@ def multi_call(call_data_params, max_in_req):
         start_idx = batch_no * max_in_req
         end_idx = min(len(call_data_array), batch_no * max_in_req + max_in_req)
 
-        # print(f"Requesting responses {start_idx} to {end_idx}")
+        print(f"Requesting responses {start_idx} to {end_idx}")
         r = requests.post('http://54.38.192.207:8545', json=call_data_array[start_idx:end_idx])
         rpc_resp_array = json.loads(r.text)
 
@@ -100,12 +100,21 @@ class Web3CallPreparer:
         with open("IERC20.abi.json") as f:
             self.erc20abi = json.load(f)
 
+        self.contracts = {}
+
     def get_balance(self, token_address, wallet):
-        contract = self.w3.eth.contract(address=token_address, abi=self.erc20abi)
+        if token_address not in self.contracts:
+            self.contracts[token_address] = self.w3.eth.contract(address=token_address, abi=self.erc20abi)
+        contract = self.contracts[token_address]
+
         try:
             contract.functions.balanceOf(wallet).call()
         except RPCCallDataWrap as wrappedData:
             return wrappedData.call_params
+
+    def get_balance_fast(self, token_address, wallet):
+        strip_wallet = wallet.replace("0x", "")
+        return {'method': 'eth_call', 'params': ({'to': token_address, 'data': '0x70a08231000000000000000000000000' + strip_wallet}, 'latest')}
 
 def test():
     web3_preparer = Web3CallPreparer()
@@ -122,14 +131,16 @@ def test():
     start = time.time()
     print(f"Prepare holders params for {len(mumbai_holders)} holder addresses")
     for mumbai_holder in mumbai_holders:
-        call_params = web3_preparer.get_balance(token_address, wallet)
+        val_addr = Web3.toChecksumAddress(mumbai_holder)
+        call_params = web3_preparer.get_balance(token_address, val_addr)
         call_data_params.append(call_params)
+
     end = time.time()
     print(f"Preparation took {end - start:0.3f}s")
 
     print(f"Start multi call for {len(mumbai_holders)} holder addresses")
     start = time.time()
-    print(multi_call(call_data_params, 17))
+    print(multi_call(call_data_params, 20))
     end = time.time()
     print(f"Response took {end - start:0.3f}s")
 
