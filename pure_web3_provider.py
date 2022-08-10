@@ -66,6 +66,11 @@ class BatchGetBalanceProvider:
                 print(f"Requesting responses {start_idx} to {end_idx}")
 
             r = requests.post(endpoint, json=call_data_array[start_idx:end_idx])
+            if r.status_code == 413:
+                raise Exception("Data too big")
+            if r.status_code != 200:
+                raise Exception(f"Other error {r}")
+
             self.number_of_batches_sent += 1
             rpc_resp_array = json.loads(r.text)
 
@@ -133,12 +138,12 @@ def test_get_balance():
 
 
 def test_erc1155_get_balance():
-    p = BatchGetBalanceProvider('http://54.38.192.207:8545', 100, verbose=True)
+    p = BatchGetBalanceProvider('http://54.38.192.207:8545', 10000, verbose=True)
 
     holder_id_pairs = []
-    for i in range(0, 3100):
+    for i in range(0, 10000):
         holder_id_pairs.append(("0x33C2af27BD58C77E47Cb82B068a2313B9878A9a2", i))
-    for i in range(0, 3100):
+    for i in range(0, 10000):
         holder_id_pairs.append(("0x2f252433E8eCa94C77F2b8D573A3a32032530F5C", i))
 
     resp = p.get_erc1155_balances(holder_id_pairs, "0x430FfE792083B45f8cd55857BC7055172a9c8767")
