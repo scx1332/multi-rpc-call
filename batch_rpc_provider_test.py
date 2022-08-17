@@ -54,13 +54,13 @@ def test_get_balance():
     resp = p.get_erc20_balances(mumbai_holders, token_address)
     end = time.time()
 
-    sum_of_glms = 0
+    glm_total_amount = 0
     for mumbai_holder_wallet, res in zip(mumbai_holders, resp):
-        for res in resp:
-            glms = int(res, 0) / 1000000000 / 1000000000
-            sum_of_glms += glms
-            # print(f"Holder {mumbai_holder_wallet}: {glms}")
-    print(f"Total number of GLMS: {sum_of_glms}")
+        glm_amount = int(res, 0) / 1000000000 / 1000000000
+        glm_total_amount += glm_amount
+        # print(f"Holder {mumbai_holder_wallet}: {glm_amount}")
+
+    print(f"Total GLM amount found: {glm_total_amount}")
 
     print(f"Response took {end - start:0.3f}s")
 
