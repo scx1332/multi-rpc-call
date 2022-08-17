@@ -169,5 +169,5 @@ class BatchRpcProvider:
             call_params = _erc1155_get_balance_call(token_address, holder_id_pair[0], holder_id_pair[1], block_no)
             call_data_params.append(call_params)
 
-        resp = self._multi_call(self._endpoint, call_data_params, self._batch_size)
+        resp = self._multi_call(call_data_params, self._batch_size)
         return resp
