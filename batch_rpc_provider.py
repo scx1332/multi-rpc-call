@@ -5,7 +5,7 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 
 def _erc20_get_balance_call(token_address, wallet, block):
@@ -71,15 +71,19 @@ class BatchRpcProvider:
 
             logger.info(f"Requesting responses {start_idx} to {end_idx}")
 
-            r = requests.post(endpoint, json=call_data_array[start_idx:end_idx])
+            raw_json = json.dumps(call_data_array[start_idx:end_idx])
+            headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+            logger.debug(f"Request json size {len(raw_json)}")
+            r = requests.post(endpoint, data=raw_json, headers=headers)
             if r.status_code == 413:
-                logger.error("Data exceeded RPC limit")
+                logger.error(f"Data exceeded RPC limit, try lowering batch size, current batch_count: f{batch_count}")
                 raise BatchRpcException("Data too big")
             if r.status_code != 200:
                 raise BatchRpcException(f"Other error {r}")
 
+            logger.debug(f"Response json size {len(r.content)}")
             self.number_of_batches_sent += 1
-            rpc_resp_array = json.loads(r.text)
+            rpc_resp_array = json.loads(r.content)
 
             for call_data in call_data_array[start_idx:end_idx]:
                 found_response = False
