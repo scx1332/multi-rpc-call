@@ -5,7 +5,7 @@ import logging
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def _erc20_get_balance_call(token_address, wallet, block):
@@ -46,7 +46,38 @@ class BatchRpcProvider:
         self._batch_size = batch_size
         self.number_of_batches_sent = 0
 
+    def _single_call(self, endpoint, call_data_param):
+        call_data = {
+            "jsonrpc": "2.0",
+            "method": call_data_param["method"],
+            "params": call_data_param["params"],
+            "id": 1
+        }
+
+        raw_json = json.dumps(call_data)
+        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
+        logger.debug(f"Request json size {len(raw_json)}")
+        start = time.time()
+        r = requests.post(endpoint, data=raw_json, headers=headers)
+        end = time.time()
+
+        if r.status_code != 200:
+            raise BatchRpcException(f"Other error {r}")
+
+        rpc_resp = json.loads(r.content)
+
+        if 'error' in rpc_resp:
+            logger.error(f"Error during request number {call_data['id']}:")
+            logger.error(f"\tCall data: {call_data}")
+            logger.error(f"\tRPC returned error: {rpc_resp['error']}")
+            raise BatchRpcException("RPC error, check log for details")
+
+        return rpc_resp['result']
+
     def _multi_call(self, endpoint, call_data_params, max_in_req):
+        total_multi_call_time = 0
+        total_request_size = 0
+        total_response_size = 0
         call_data_array = []
         rpc_id = 1
         for call_data_param in call_data_params:
@@ -74,13 +105,21 @@ class BatchRpcProvider:
             raw_json = json.dumps(call_data_array[start_idx:end_idx])
             headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
             logger.debug(f"Request json size {len(raw_json)}")
+            total_request_size += len(raw_json)
+            start = time.time()
             r = requests.post(endpoint, data=raw_json, headers=headers)
+            end = time.time()
+            total_multi_call_time += end - start
+            logger.debug(f"Request time {end - start:0.3f}s")
+
             if r.status_code == 413:
-                logger.error(f"Data exceeded RPC limit, try lowering batch size, current batch_count: f{batch_count}")
+                logger.error(
+                    f"Data exceeded RPC limit, data size {len(raw_json)} try lowering batch size, current batch_count: f{batch_count}")
                 raise BatchRpcException("Data too big")
             if r.status_code != 200:
                 raise BatchRpcException(f"Other error {r}")
 
+            total_response_size += len(raw_json)
             logger.debug(f"Response json size {len(r.content)}")
             self.number_of_batches_sent += 1
             rpc_resp_array = json.loads(r.content)
@@ -102,12 +141,23 @@ class BatchRpcProvider:
                     raise BatchRpcException("RPC error, check log for details")
 
                 result_array.append(rpc_resp["result"])
+        logger.debug(f"Total call time {total_multi_call_time:0.3f}s. ")
+        logger.debug(f"Total request size: {total_request_size}. Total response size: {total_response_size} ")
         return result_array
 
-    def get_erc20_balances(self, holders, token_address):
+    def get_latest_block(self):
+        call_data_param = {
+            "method": "eth_blockNumber",
+            "params": []
+        }
+        resp = self._single_call(self._endpoint, call_data_param)
+        block_num = int(resp, 0)
+        return block_num
+
+    def get_erc20_balances(self, holders, token_address, block_no='latest'):
         call_data_params = []
         for holder in holders:
-            call_params = _erc20_get_balance_call(token_address, holder, 'latest')
+            call_params = _erc20_get_balance_call(token_address, holder, block_no)
             call_data_params.append(call_params)
 
         resp = self._multi_call(self._endpoint, call_data_params, self._batch_size)
@@ -121,6 +171,3 @@ class BatchRpcProvider:
 
         resp = self._multi_call(self._endpoint, call_data_params, self._batch_size)
         return resp
-
-
-
