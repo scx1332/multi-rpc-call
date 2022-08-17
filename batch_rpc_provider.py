@@ -22,7 +22,7 @@ def _erc20_get_balance_call(token_address, wallet, block):
     }
 
 
-def _erc1155_get_balance_call(token_address, wallet, id, block):
+def _erc1155_get_balance_call(token_address, wallet, token_id, block):
     strip_wallet = wallet.replace("0x", "")
     abi_method = "00fdd58e000000000000000000000000"
     return {
@@ -30,7 +30,7 @@ def _erc1155_get_balance_call(token_address, wallet, id, block):
         'params': [
             {
                 'to': token_address,
-                'data': f"0x{abi_method}{strip_wallet}{id:064x}"
+                'data': f"0x{abi_method}{strip_wallet}{token_id:064x}"
             },
             block]
     }
@@ -73,9 +73,10 @@ class BatchRpcProvider:
 
             r = requests.post(endpoint, json=call_data_array[start_idx:end_idx])
             if r.status_code == 413:
-                raise Exception("Data too big")
+                logger.error("Data exceeded RPC limit")
+                raise BatchRpcException("Data too big")
             if r.status_code != 200:
-                raise Exception(f"Other error {r}")
+                raise BatchRpcException(f"Other error {r}")
 
             self.number_of_batches_sent += 1
             rpc_resp_array = json.loads(r.text)
