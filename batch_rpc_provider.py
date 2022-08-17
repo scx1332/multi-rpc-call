@@ -46,7 +46,7 @@ class BatchRpcProvider:
         self._batch_size = batch_size
         self.number_of_batches_sent = 0
 
-    def _single_call(self, endpoint, call_data_param):
+    def _single_call(self, call_data_param):
         call_data = {
             "jsonrpc": "2.0",
             "method": call_data_param["method"],
@@ -58,7 +58,7 @@ class BatchRpcProvider:
         headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         logger.debug(f"Request json size {len(raw_json)}")
         start = time.time()
-        r = requests.post(endpoint, data=raw_json, headers=headers)
+        r = requests.post(self._endpoint, data=raw_json, headers=headers)
         end = time.time()
 
         if r.status_code != 200:
@@ -74,7 +74,7 @@ class BatchRpcProvider:
 
         return rpc_resp['result']
 
-    def _multi_call(self, endpoint, call_data_params, max_in_req):
+    def _multi_call(self, call_data_params, max_in_req):
         total_multi_call_time = 0
         total_request_size = 0
         total_response_size = 0
@@ -107,7 +107,7 @@ class BatchRpcProvider:
             logger.debug(f"Request json size {len(raw_json)}")
             total_request_size += len(raw_json)
             start = time.time()
-            r = requests.post(endpoint, data=raw_json, headers=headers)
+            r = requests.post(self._endpoint, data=raw_json, headers=headers)
             end = time.time()
             total_multi_call_time += end - start
             logger.debug(f"Request time {end - start:0.3f}s")
@@ -150,7 +150,7 @@ class BatchRpcProvider:
             "method": "eth_blockNumber",
             "params": []
         }
-        resp = self._single_call(self._endpoint, call_data_param)
+        resp = self._single_call(call_data_param)
         block_num = int(resp, 0)
         return block_num
 
@@ -160,7 +160,7 @@ class BatchRpcProvider:
             call_params = _erc20_get_balance_call(token_address, holder, block_no)
             call_data_params.append(call_params)
 
-        resp = self._multi_call(self._endpoint, call_data_params, self._batch_size)
+        resp = self._multi_call(call_data_params, self._batch_size)
         return resp
 
     def get_erc1155_balances(self, holder_id_pairs, token_address, block_no='latest'):
