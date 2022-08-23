@@ -1,5 +1,6 @@
 import logging
 import time
+import argparse
 
 from batch_rpc_provider import BatchRpcProvider, BatchRpcException
 
@@ -7,9 +8,13 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+parser = argparse.ArgumentParser(description='Test params')
+parser.add_argument('--target-url', dest="target_url", type=str, help='Node name', default="http://54.38.192.207:8545")
+
+args = parser.parse_args()
 
 def test_block_history():
-    p = BatchRpcProvider('http://54.38.192.207:8545', 20)
+    p = BatchRpcProvider(args.target_url, 20)
     latest_block = p.get_latest_block()
 
     token_address = "0x2036807B0B3aaf5b1858EE822D0e111fDdac7018"
