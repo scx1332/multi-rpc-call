@@ -41,7 +41,9 @@ class BatchRpcException(Exception):
 
 
 class BatchRpcProvider:
-    def __init__(self, endpoint, batch_size):
+    def __init__(self, endpoint, batch_size=1):
+        if batch_size <= 0:
+            raise Exception("Batch size must be greater than 0")
         self._endpoint = endpoint
         self._batch_size = batch_size
         self.number_of_batches_sent = 0
@@ -153,6 +155,15 @@ class BatchRpcProvider:
         resp = self._single_call(call_data_param)
         block_num = int(resp, 0)
         return block_num
+
+    def get_chain_id(self):
+        call_data_param = {
+            "method": "eth_chainId",
+            "params": []
+        }
+        resp = self._single_call(call_data_param)
+        chain_id = int(resp, 0)
+        return chain_id
 
     def get_erc20_balances(self, holders, token_address, block_no='latest'):
         call_data_params = []
