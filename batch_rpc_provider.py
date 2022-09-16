@@ -69,9 +69,7 @@ class BatchRpcProvider:
 
         raw_json = json.dumps(call_data)
         logger.debug(f"Request json size {len(raw_json)}")
-        start = time.time()
         r = send_post(self._endpoint, data=raw_json)
-        end = time.time()
 
         if r.status != 200:
             raise BatchRpcException(f"Other error {r}")
@@ -116,11 +114,9 @@ class BatchRpcProvider:
             logger.info(f"Requesting responses {start_idx} to {end_idx}")
 
             raw_json = json.dumps(call_data_array[start_idx:end_idx])
-            headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
             logger.debug(f"Request json size {len(raw_json)}")
             total_request_size += len(raw_json)
             start = time.time()
-            #r = requests.post(self._endpoint, data=raw_json, headers=headers)
             r = send_post(self._endpoint, data=raw_json)
 
             end = time.time()
