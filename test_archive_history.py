@@ -7,25 +7,35 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 
+NULL_ADDR = "0x0000000000000000000000000000000000000000"
+POLYGON_GENESIS_ADDR = "0x0000000000000000000000000000000000001010"
+
+CHAIN_ID_MAINNET = 1
+CHAIN_ID_RINKEBY = 4
+CHAIN_ID_GOERLI = 5
+CHAIN_ID_POLYGON = 137
+CHAIN_ID_MUMBAI = 80001
+
 
 def test_block_history(p: BatchRpcProvider):
     latest_block = p.get_latest_block()
 
     chain_id = p.get_chain_id()
 
-    check_balance_addr = ""
-    if chain_id == 1:
-        check_balance_addr = "0x0000000000000000000000000000000000000000"
-    elif chain_id == 4:
-        check_balance_addr = "0x0000000000000000000000000000000000000000"
-    elif chain_id == 5:
-        check_balance_addr = "0x0000000000000000000000000000000000000000"
-    elif chain_id == 137:
-        check_balance_addr = "0x0000000000000000000000000000000000001010"
-    elif chain_id == 80001:
-        check_balance_addr = "0x0000000000000000000000000000000000001010"
-    else:
+    def get_addr_to_check():
+        if chain_id == CHAIN_ID_MAINNET:
+            return NULL_ADDR
+        if chain_id == CHAIN_ID_RINKEBY:
+            return NULL_ADDR
+        if chain_id == CHAIN_ID_GOERLI:
+            return NULL_ADDR
+        if chain_id == CHAIN_ID_POLYGON:
+            return POLYGON_GENESIS_ADDR
+        if chain_id == CHAIN_ID_MUMBAI:
+            return POLYGON_GENESIS_ADDR
         raise Exception(f"Unrecognized chain id {chain_id}")
+
+    check_balance_addr = get_addr_to_check()
 
     max_succeeded_block = latest_block
     min_failed_block = -1
