@@ -38,7 +38,6 @@ def test_block_history(p: BatchRpcProvider):
             logger.info(f"Checking block {current_block}")
             balance = p.get_balance(check_balance_addr, f"0x{current_block:x}")
             logger.info(f"Balance at block {current_block} is {balance}")
-            #p.get_erc20_balances(single_holder_array, token_address, f"0x{current_block:x}")
             success = True
         except BatchRpcException:
             success = False
@@ -61,6 +60,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     p = BatchRpcProvider(args.target_url, 1)
-    print(test_block_history(p))
+    res = test_block_history(p)
+    print("Oldest block: {}, archive depth: {}".format(res[0], res[1]))
 
 
