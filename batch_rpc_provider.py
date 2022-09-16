@@ -2,10 +2,22 @@ import requests
 import time
 import json
 import logging
+import urllib.request
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+
+def send_post(url, data):
+    data_bytes = data.encode('utf-8')   # needs to be bytes
+
+    req = urllib.request.Request(url)
+    req.add_header('Content-Type', 'application/json')
+    req.add_header('Accept', 'application/json')
+    req.add_header('Content-Length', len(data_bytes))
+    response = urllib.request.urlopen(req, data_bytes)
+    return response
 
 
 def _erc20_get_balance_call(token_address, wallet, block):
@@ -57,16 +69,16 @@ class BatchRpcProvider:
         }
 
         raw_json = json.dumps(call_data)
-        headers = {'Content-type': 'application/json', 'Accept': 'application/json'}
         logger.debug(f"Request json size {len(raw_json)}")
         start = time.time()
-        r = requests.post(self._endpoint, data=raw_json, headers=headers)
+        r = send_post(self._endpoint, data=raw_json)
         end = time.time()
 
-        if r.status_code != 200:
+        if r.status != 200:
             raise BatchRpcException(f"Other error {r}")
 
-        rpc_resp = json.loads(r.content)
+        content = r.read()
+        rpc_resp = json.loads(content)
 
         if 'error' in rpc_resp:
             logger.error(f"Error during request number {call_data['id']}:")
@@ -109,22 +121,25 @@ class BatchRpcProvider:
             logger.debug(f"Request json size {len(raw_json)}")
             total_request_size += len(raw_json)
             start = time.time()
-            r = requests.post(self._endpoint, data=raw_json, headers=headers)
+            #r = requests.post(self._endpoint, data=raw_json, headers=headers)
+            r = send_post(self._endpoint, data=raw_json)
+
             end = time.time()
             total_multi_call_time += end - start
             logger.debug(f"Request time {end - start:0.3f}s")
 
-            if r.status_code == 413:
+            if r.status == 413:
                 logger.error(
                     f"Data exceeded RPC limit, data size {len(raw_json)} try lowering batch size, current batch_count: f{batch_count}")
                 raise BatchRpcException("Data too big")
-            if r.status_code != 200:
+            if r.status != 200:
                 raise BatchRpcException(f"Other error {r}")
 
             total_response_size += len(raw_json)
-            logger.debug(f"Response json size {len(r.content)}")
+            content = r.read()
+            logger.debug(f"Response json size {len(content)}")
             self.number_of_batches_sent += 1
-            rpc_resp_array = json.loads(r.content)
+            rpc_resp_array = json.loads(content)
 
             for call_data in call_data_array[start_idx:end_idx]:
                 found_response = False
@@ -164,6 +179,17 @@ class BatchRpcProvider:
         resp = self._single_call(call_data_param)
         chain_id = int(resp, 0)
         return chain_id
+
+    def get_balance(self, wallet_address, block):
+        call_data_param = {
+            "method": "eth_getBalance",
+            "params": [wallet_address, block]
+        }
+        resp = self._single_call(call_data_param)
+        if resp == "0x":
+            raise Exception("Unknown value 0x")
+        balance = int(resp, 0)
+        return balance
 
     def get_erc20_balances(self, holders, token_address, block_no='latest'):
         call_data_params = []

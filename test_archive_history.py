@@ -13,19 +13,22 @@ def test_block_history(p: BatchRpcProvider):
 
     chain_id = p.get_chain_id()
 
-    if chain_id == 137:
-        # USDC token address on Polygon Mainnet
-        token_address = "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"
-        single_holder_array = ['0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174']
+    check_balance_addr = ""
+    if chain_id == 1:
+        check_balance_addr = "0x0000000000000000000000000000000000000000"
+    elif chain_id == 4:
+        check_balance_addr = "0x0000000000000000000000000000000000000000"
+    elif chain_id == 5:
+        check_balance_addr = "0x0000000000000000000000000000000000000000"
+    elif chain_id == 137:
+        check_balance_addr = "0x0000000000000000000000000000000000001010"
     elif chain_id == 80001:
-        # GLM token address on Mumbai
-        token_address = "0x2036807B0B3aaf5b1858EE822D0e111fDdac7018"
-        single_holder_array = ['0xc596aee002ebe98345ce3f967631aaf79cfbdf41']
+        check_balance_addr = "0x0000000000000000000000000000000000001010"
     else:
         raise Exception(f"Unrecognized chain id {chain_id}")
 
     max_succeeded_block = latest_block
-    min_failed_block = 1
+    min_failed_block = -1
     current_block = max_succeeded_block
 
     max_steps = 100
@@ -33,7 +36,9 @@ def test_block_history(p: BatchRpcProvider):
         max_steps -= 1
         try:
             logger.info(f"Checking block {current_block}")
-            p.get_erc20_balances(single_holder_array, token_address, f"0x{current_block:x}")
+            balance = p.get_balance(check_balance_addr, f"0x{current_block:x}")
+            logger.info(f"Balance at block {current_block} is {balance}")
+            #p.get_erc20_balances(single_holder_array, token_address, f"0x{current_block:x}")
             success = True
         except BatchRpcException:
             success = False
