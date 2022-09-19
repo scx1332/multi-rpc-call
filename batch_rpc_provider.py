@@ -105,6 +105,7 @@ class BatchRpcProvider:
         if len(call_data_array) == 0:
             return result_array
 
+
         batch_count = (len(call_data_array) - 1) // max_in_req + 1
         for batch_no in range(0, batch_count):
 
@@ -174,6 +175,13 @@ class BatchRpcProvider:
         resp = self._single_call(call_data_param)
         chain_id = int(resp, 0)
         return chain_id
+
+    def get_erc20_balance(self, holder, token_address, block_no='latest'):
+        call_data_params = []
+        call_params = _erc20_get_balance_call(token_address, holder, block_no)
+
+        resp = self._single_call(call_params)
+        return resp
 
     def get_balance(self, wallet_address, block):
         call_data_param = {

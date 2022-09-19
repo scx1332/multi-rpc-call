@@ -14,14 +14,14 @@ def test_get_balance():
 
     mumbai_holders = []
     logger.info("Load holders data...")
-    with open("mumbai_holders_100.txt") as r:
+    with open("mumbai_holders.txt") as r:
         for line in r:
             if line.strip():
                 mumbai_holders.append(line.strip())
 
     logger.info(f"Loaded {len(mumbai_holders)} mumbai GLM holders...")
 
-    p = BatchRpcProvider('http://54.38.192.207:8545', 20)
+    p = BatchRpcProvider('https://mumbai-temp.golem.network/api/rpc/polygon/MAaCpE421MddDmzMLcAp', 5)
     logger.info(f"Start multi call for {len(mumbai_holders)} holder addresses")
     start = time.time()
     resp = p.get_erc20_balances(mumbai_holders, token_address)
@@ -39,6 +39,7 @@ def test_get_balance():
 
 
 if __name__ == "__main__":
-    test_get_balance()
+    for i in range(0,10000):
+        test_get_balance()
 
 
