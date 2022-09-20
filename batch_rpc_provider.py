@@ -194,6 +194,14 @@ class BatchRpcProvider:
         balance = int(resp, 0)
         return balance
 
+    def get_block_by_number(self, block, full_info):
+        call_data_param = {
+            "method": "eth_getBlockByNumber",
+            "params": [hex(block), full_info]
+        }
+        resp = self._single_call(call_data_param)
+        return resp
+
     def get_erc20_balances(self, holders, token_address, block_no='latest'):
         call_data_params = []
         for holder in holders:
