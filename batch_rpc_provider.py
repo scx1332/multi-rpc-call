@@ -195,9 +195,40 @@ class BatchRpcProvider:
         return balance
 
     def get_block_by_number(self, block, full_info):
+        if type(block) == int:
+            block = hex(block)
         call_data_param = {
             "method": "eth_getBlockByNumber",
-            "params": [hex(block), full_info]
+            "params": [block, full_info]
+        }
+        resp = self._single_call(call_data_param)
+        return resp
+
+    def get_blocks_by_range(self, block, number_of_blocks, full_info):
+
+        call_data_params = []
+        for i in range(0, number_of_blocks):
+            call_data_param = {
+                "method": "eth_getBlockByNumber",
+                "params": [hex(block + i), full_info]
+            }
+            call_data_params.append(call_data_param)
+
+        resp = self._multi_call(call_data_params, self._batch_size)
+        return resp
+
+    def get_transaction_by_hash(self, transaction_hash):
+        call_data_param = {
+            "method": "eth_getTransactionByHash",
+            "params": [transaction_hash]
+        }
+        resp = self._single_call(call_data_param)
+        return resp
+
+    def get_transaction_by_block_number_and_index(self, block_number, transaction_idx):
+        call_data_param = {
+            "method": "eth_getTransactionByBlockNumberAndIndex",
+            "params": [hex(block_number), hex(transaction_idx)]
         }
         resp = self._single_call(call_data_param)
         return resp
